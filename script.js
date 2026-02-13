@@ -453,6 +453,125 @@ document.addEventListener("DOMContentLoaded", () => {
 
     socket.on("chat message", (msg) => addMessage(msg, "received"));
   }
+  // ====== PUZZLE CONFIG ======
+const PUZZLE_SIZE = 3; // 3x3
+const PUZZLE_IMAGE = "puzzle.jpg"; 
+// IMPORTANT: put puzzle.jpg in the SAME folder as index.html on Render
+// If it's inside assets folder, use: "assets/puzzle.jpg"
+
+let firstPick = null;
+
+function initPuzzle() {
+  const board = document.getElementById("puzzle-board");
+  const instruction = document.getElementById("puzzle-instruction");
+  const continueBtn = document.getElementById("puzzle-continue-btn");
+
+  if (!board) return;
+
+  // Clear old
+  board.innerHTML = "";
+  firstPick = null;
+  continueBtn?.classList.add("hidden");
+
+  // Grid setup
+  board.style.gridTemplateColumns = `repeat(${PUZZLE_SIZE}, 1fr)`;
+  board.style.gridTemplateRows = `repeat(${PUZZLE_SIZE}, 1fr)`;
+
+  // PRELOAD IMAGE first
+  const img = new Image();
+  img.src = PUZZLE_IMAGE;
+
+  img.onload = () => {
+    instruction.textContent = "Solve the puzzle to see my heart...";
+
+    // Create correct order positions
+    const pieces = [];
+    for (let i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i++) pieces.push(i);
+
+    // Shuffle
+    const shuffled = [...pieces].sort(() => Math.random() - 0.5);
+
+    // Build tiles
+    shuffled.forEach((pos, index) => {
+      const tile = document.createElement("div");
+      tile.className = "puzzle-piece";
+      tile.dataset.correct = index; // correct spot index
+      tile.dataset.current = pos;   // which image fragment it is currently showing
+
+      // Background positioning based on fragment (pos)
+      const row = Math.floor(pos / PUZZLE_SIZE);
+      const col = pos % PUZZLE_SIZE;
+
+      tile.style.backgroundImage = `url("${PUZZLE_IMAGE}")`;
+      tile.style.backgroundSize = `${PUZZLE_SIZE * 100}% ${PUZZLE_SIZE * 100}%`;
+      tile.style.backgroundPosition = `${(col / (PUZZLE_SIZE - 1)) * 100}% ${(row / (PUZZLE_SIZE - 1)) * 100}%`;
+
+      tile.addEventListener("click", () => handleTileClick(tile, continueBtn));
+      board.appendChild(tile);
+    });
+  };
+
+  img.onerror = () => {
+    instruction.textContent =
+      "⚠️ Puzzle image not found. Check puzzle.jpg path/name (Render is case-sensitive).";
+    board.innerHTML = "";
+  };
+}
+
+function handleTileClick(tile, continueBtn) {
+  if (!firstPick) {
+    firstPick = tile;
+    tile.style.outline = "2px solid rgba(255,255,255,0.7)";
+    return;
+  }
+
+  // Swap images between two tiles
+  const a = firstPick;
+  const b = tile;
+
+  // swap dataset.current
+  const temp = a.dataset.current;
+  a.dataset.current = b.dataset.current;
+  b.dataset.current = temp;
+
+  // update backgrounds based on dataset.current
+  updateTileBackground(a);
+  updateTileBackground(b);
+
+  // reset selection
+  a.style.outline = "none";
+  firstPick = null;
+
+  // Check solved
+  if (isSolved()) {
+    continueBtn?.classList.remove("hidden");
+  }
+}
+
+function updateTileBackground(tile) {
+  const pos = parseInt(tile.dataset.current, 10);
+  const row = Math.floor(pos / PUZZLE_SIZE);
+  const col = pos % PUZZLE_SIZE;
+
+  tile.style.backgroundSize = `${PUZZLE_SIZE * 100}% ${PUZZLE_SIZE * 100}%`;
+  tile.style.backgroundPosition = `${(col / (PUZZLE_SIZE - 1)) * 100}% ${(row / (PUZZLE_SIZE - 1)) * 100}%`;
+}
+
+function isSolved() {
+  const tiles = document.querySelectorAll(".puzzle-piece");
+  for (const t of tiles) {
+    if (t.dataset.current !== t.dataset.correct) return false;
+  }
+  return true;
+}
+
+// Call initPuzzle when the "picture-reveal" screen is shown.
+// If you already have navigation logic, call initPuzzle() at that moment.
+// Simple fallback: initialize on page load too:
+window.addEventListener("load", () => {
+  initPuzzle();
+});
+
 
   // ---------- Dev Shortcut ----------
   document.addEventListener("keydown", (e) => {
@@ -462,3 +581,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
