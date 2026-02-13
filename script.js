@@ -455,7 +455,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   // ====== PUZZLE CONFIG ======
 const PUZZLE_SIZE = 3; // 3x3
-const PUZZLE_IMAGE = "puzzle.jpg"; 
+const PUZZLE_IMAGE = "fatii.png"; 
 // IMPORTANT: put puzzle.jpg in the SAME folder as index.html on Render
 // If it's inside assets folder, use: "assets/puzzle.jpg"
 
@@ -581,4 +581,5 @@ window.addEventListener("load", () => {
     }
   });
 });
+
 
