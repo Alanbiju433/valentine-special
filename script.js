@@ -1,132 +1,101 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const screens = document.querySelectorAll(".screen");
-  const startBtn = document.getElementById("start-btn");
-  const nextBtns = document.querySelectorAll(".btn-next");
-  const bgMusic = document.getElementById("bg-music");
-  const musicToggle = document.getElementById("music-toggle");
+// Advanced Vertical Reel Switcher (FIXED)
+function showScreen(id) {
+  const target = document.getElementById(id);
+  const current = document.querySelector('.screen.active');
+  if (!target || target === current) return;
 
-  // ---------------- Toast ----------------
-  function showToast(message) {
-    let toast = document.querySelector(".toast-msg");
-    if (!toast) {
-      toast = document.createElement("div");
-      toast.className = "toast-msg";
-      document.body.appendChild(toast);
+  const currentIndex = current ? parseInt(current.dataset.index || "-1", 10) : -1;
+  const targetIndex = parseInt(target.dataset.index || "0", 10);
+
+  // Prep target screen
+  target.classList.remove('next', 'prev');
+  if (targetIndex > currentIndex) target.classList.add('next');
+  else target.classList.add('prev');
+
+  // Trigger reflow
+  void target.offsetHeight;
+
+  // Transition current out
+  if (current) {
+    current.classList.remove('active');
+    if (targetIndex > currentIndex) current.classList.add('prev');
+    else current.classList.add('next');
+  }
+
+  // Transition target in
+  target.classList.add('active');
+  target.classList.remove('next', 'prev');
+
+  // Update Story Bar
+  updateProgressBar(targetIndex);
+
+  // Screen-specific logic
+  handleScreenSpecifics(id, target);
+}
+
+// Screen Specifics (FIXED and separated)
+function handleScreenSpecifics(id, target) {
+  const video = document.getElementById('memory-video');
+  const youtubeOverlay = document.getElementById('youtube-overlay');
+  const youtubeIframe = document.getElementById('youtube-video');
+
+  if (id === 'video-memory') {
+    const useYouTube = false; // change to true if using YouTube
+    const youtubeURL = "";    // put embed url if using YouTube
+
+    if (useYouTube && youtubeURL) {
+      if (video) video.style.display = 'none';
+      if (youtubeOverlay) {
+        youtubeOverlay.classList.remove('hidden');
+        if (youtubeIframe) youtubeIframe.src = youtubeURL;
+      }
+      if (bgMusic) bgMusic.pause();
+    } else {
+      if (youtubeOverlay) youtubeOverlay.classList.add('hidden');
+      if (youtubeIframe) youtubeIframe.src = "";
+
+      if (video) {
+        video.style.display = 'block';
+        video.currentTime = 0;
+        video.play().catch(() => {
+          console.log("Video failed (maybe missing file).");
+          showToast("Video loading... ⏳");
+        });
+
+        if (bgMusic) bgMusic.pause();
+
+        video.onended = () => {
+          showScreen('picture-reveal');
+          if (bgMusic) bgMusic.play().catch(() => {});
+        };
+      }
     }
-    toast.textContent = message;
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 2500);
   }
 
-  const funnyWrongAnswers = [
-    "Not quite, darling! 🤭",
-    "Try again, my love! ❤️",
-    "Nope! Are you guessing? 🤨",
-    "Close... (maybe?) 🤏",
-    "I know you know this! 😉",
-    "Think harder! 🧠",
-    "One more try 😌",
-  ];
-
-  // ---------------- Screen Switcher ----------------
-  function showScreen(id) {
-    const target = document.getElementById(id);
-    const current = document.querySelector(".screen.active");
-    if (!target || target === current) return;
-
-    if (current) current.classList.remove("active");
-    target.classList.add("active");
-
-    // Puzzle init only when entering puzzle screen
-    if (id === "picture-reveal" && typeof window.initPuzzle === "function") {
-      if (!window.isPuzzleInitialized) {
-        window.initPuzzle();
-        window.isPuzzleInitialized = true;
-      }
+  if (id === 'picture-reveal') {
+    // ✅ only init puzzle once
+    if (!window.isPuzzleInitialized && typeof window.initPuzzle === 'function') {
+      window.initPuzzle();
+      window.isPuzzleInitialized = true;
     }
+    if (bgMusic && bgMusic.paused) bgMusic.play().catch(() => {});
   }
 
-  // ---------------- Start Button ----------------
-  if (startBtn) {
-    startBtn.addEventListener("click", () => {
-      showScreen("day-1");
-      if (bgMusic) {
-        bgMusic.volume = 0.4;
-        bgMusic.muted = true; // start muted
-        bgMusic.play().catch(() => {});
-      }
-    });
+  if (id === 'day-7') {
+    target.classList.add('heartbeat-mode');
   }
 
-  // ---------------- Next Buttons ----------------
-  nextBtns.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const nextId = e.currentTarget.getAttribute("data-next");
-      if (nextId) showScreen(nextId);
-    });
-  });
-
-  // ---------------- Music Toggle ----------------
-  if (musicToggle && bgMusic) {
-    musicToggle.addEventListener("click", () => {
-      if (bgMusic.paused) {
-        bgMusic.muted = false;
-        bgMusic.play().catch(() => {});
-        musicToggle.textContent = "🔊";
-      } else {
-        bgMusic.muted = !bgMusic.muted;
-        musicToggle.textContent = bgMusic.muted ? "🔇" : "🔊";
-      }
-    });
+  // Animate frame
+  const frame = target.querySelector('.frame, .video-container, .puzzle-wrapper');
+  if (frame && window.gsap) {
+    gsap.fromTo(
+      frame,
+      { opacity: 0, scale: 0.8, y: 100, filter: "blur(20px)" },
+      { opacity: 1, scale: 1, y: 0, filter: "blur(0px)", duration: 1, ease: "expo.out" }
+    );
   }
 
-  // ---------------- Unlock / Riddle Logic ----------------
-  document.querySelectorAll(".btn-check").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const box = btn.closest(".riddle-box");
-      if (!box) return;
-
-      const input = box.querySelector(".riddle-input");
-      const accepted = (box.dataset.answer || "")
-        .split(",")
-        .map((s) => s.trim().toLowerCase());
-
-      const userVal = input ? input.value.trim().toLowerCase() : "";
-
-      const screen = btn.closest(".screen");
-      const nextBtn = screen ? screen.querySelector(".btn-next") : null;
-
-      let ok = false;
-      if (accepted.includes("*")) ok = true;
-      else {
-        for (const ans of accepted) {
-          if (ans && userVal.includes(ans)) {
-            ok = true;
-            break;
-          }
-        }
-      }
-
-      if (ok) {
-        btn.textContent = "Unlocked ❤️";
-        btn.style.background = "#4CAF50";
-        btn.style.color = "#fff";
-        if (nextBtn) nextBtn.classList.remove("hidden");
-      } else {
-        if (input) {
-          input.classList.add("shake-it");
-          setTimeout(() => input.classList.remove("shake-it"), 400);
-        }
-        showToast(funnyWrongAnswers[Math.floor(Math.random() * funnyWrongAnswers.length)]);
-
-        // still allow next
-        btn.textContent = "Saved anyway ✨";
-        btn.style.background = "#f7d56b";
-        btn.style.color = "#000";
-        if (nextBtn) nextBtn.classList.remove("hidden");
-      }
-    });
-  });
-
-  console.log("✅ script.js loaded & running");
-});
+  // Typewriter
+  const typeWriterEl = target.querySelector('.typewriter-text');
+  if (typeWriterEl) startTypewriter(typeWriterEl);
+}
