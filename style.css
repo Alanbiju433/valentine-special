@@ -520,6 +520,36 @@ button {
     /* Less shouting */
     box-shadow: 0 4px 10px rgba(128, 0, 32, 0.2);
 }
+/* Puzzle container must have real size */
+#puzzle-board {
+  width: min(92vw, 420px);
+  aspect-ratio: 1 / 1;   /* square board */
+  margin: 16px auto;
+  display: grid;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 10px;
+  border-radius: 16px;
+  backdrop-filter: blur(6px);
+}
+
+/* Each piece */
+.puzzle-piece {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background-repeat: no-repeat;
+  background-size: 300% 300%; /* if using 3x3, update in JS */
+  background-color: rgba(255,255,255,0.08); /* prevents “pure black” */
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.12s ease;
+}
+
+.puzzle-piece:active {
+  transform: scale(0.98);
+}
+
 
 .btn-yes:hover {
     transform: translateY(-2px);
@@ -947,3 +977,4 @@ button {
     color: #ffffff;
 
 }
+
