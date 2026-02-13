@@ -170,19 +170,27 @@
         </section>
 
         <!-- Video Memory Slide -->
-        <section id="video-memory" class="screen" data-index="6">
-            <div class="video-container">
-                <div id="video-wrapper" style="width: 100%; height: 100%;">
-                    <!-- Local video (stays for reference or if used) -->
-                    <video id="memory-video" controls style="width: 100%; display: block;">
-                        <source src="video.mp4" type="video/mp4">
-                        Your browser does not support HTML5 video.
-                    </video>
-                    <!-- YouTube Iframe Fallback (Hidden by default or replaces video if needed) -->
-                    <div id="youtube-overlay" class="hidden" style="width: 100%; aspect-ratio: 16/9;">
-                        <iframe id="youtube-video" width="100%" height="100%" src="" frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen></iframe>
+      <section id="video-memory" class="screen" data-index="6">
+    <div class="video-container">
+        <div id="video-wrapper" style="width: 100%; height: 100%;">
+
+            <!-- Local Video -->
+            <video id="memory-video" controls style="width: 100%; display: none;">
+                <source src="video.mp4" type="video/mp4">
+                Your browser does not support HTML5 video.
+            </video>
+
+            <!-- YouTube Embed -->
+            <div id="youtube-overlay" style="width: 100%; aspect-ratio: 16/9;">
+                <iframe 
+                    width="100%" 
+                    height="100%" 
+                    src="https://www.youtube.com/embed/5_p3jcSsZCw"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+           
                     </div>
                 </div>
                 <div class="skip-container">
@@ -258,3 +266,4 @@
 </body>
 
 </html>
+
