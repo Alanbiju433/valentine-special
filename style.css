@@ -8,7 +8,7 @@
     --neon-pink: #FF00FF;
     --cyber-blue: #00FFFF;
     --cream: #FFF5F8;
-    --dark-bg: #0D0208;
+    --dark-bg: #C32148;
     /* Matrix-y Black */
     --hologram-glow: rgba(255, 0, 255, 0.4);
     --glass-bg: rgba(255, 192, 203, 0.1);
@@ -945,4 +945,5 @@ button {
 #celebration-msg p,
 #time-msg p {
     color: #ffffff;
+
 }
