@@ -13,8 +13,13 @@ window.initPuzzle = function () {
 
   const img = new Image();
   img.onload = function () {
-    const containerWidth = Math.min(600, window.innerWidth - 40);
-    const containerHeight = containerWidth;
+    const parent = puzzleBoard.parentElement || document.body;
+const parentWidth = parent.getBoundingClientRect().width;
+
+// keep some padding so it doesn't touch edges
+const containerWidth = Math.min(600, parentWidth - 20);
+const containerHeight = containerWidth;
+
     const pieceSize = containerWidth / GRID_SIZE;
 
     // Board styles
