@@ -144,8 +144,8 @@ window.initPuzzle = function() {
 
         // Check if all pieces are placed
         const allPlaced = pieces.every(p => p.element.dataset.placed === 'true');
-        if (allPlaced) 
-          completePuzzle();   // ✅ CORRECTcompleteP uzzle();
+        if (allPlaced) {
+          completePuzzle();
         }
       } else {
         draggedPiece.style.opacity = '1';
@@ -182,7 +182,6 @@ window.initPuzzle = function() {
       completeImage.style.zIndex = '5';
       completeImage.style.opacity = '0';
       completeImage.style.transition = 'opacity 0.6s ease';
-      completeImage.insertAdjacentHTML('afterbegin', '<div style="position: absolute; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(255,105,180,0.3) 0%, rgba(255,192,203,0.2) 100%);"></div>');
       
       puzzleBoard.appendChild(completeImage);
       setTimeout(() => {
