@@ -1,24 +1,21 @@
-// Puzzle initialization (Normal layout + tray + sticky snap)
 window.initPuzzle = function () {
   const puzzleBoard = document.getElementById("puzzle-board");
   const puzzleInstruction = document.getElementById("puzzle-instruction");
   const puzzleContinueBtn = document.getElementById("puzzle-continue-btn");
 
   if (!puzzleBoard) return;
-if (puzzleBoard.dataset.initialized === "true") return;
-puzzleBoard.dataset.initialized = "true";
-puzzleBoard.innerHTML = "";
-;
-  board.style.boxShadow = "0 0 25px rgba(255,105,180,0.6)";
-board.style.transition = "box-shadow 0.6s ease";
-wrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (puzzleBoard.dataset.initialized === "true") return;
 
+  puzzleBoard.dataset.initialized = "true";
+  puzzleBoard.innerHTML = "";
 
-  const GRID_SIZE = 4;        // change number of pieces here
+  const GRID_SIZE = 4;
   const IMAGE_URL = "fatii.png";
 
   const img = new Image();
   img.onload = function () {
+
+  
     // ✅ use parent width so it fits your page container
     const parent = puzzleBoard.parentElement || document.body;
     const parentWidth = parent.getBoundingClientRect().width;
