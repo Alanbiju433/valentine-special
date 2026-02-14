@@ -68,17 +68,7 @@ window.initPuzzle = function () {
     wrapper.appendChild(tray);
 
     // faint hint image (optional)
-    const hint = document.createElement("div");
-    Object.assign(hint.style, {
-      position: "absolute",
-      inset: "0",
-      backgroundImage: `url('${IMAGE_URL}')`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      opacity: "0.14",
-      pointerEvents: "none",
-    });
-    board.appendChild(hint);
+    
 
     // create pieces
     const pieces = [];
