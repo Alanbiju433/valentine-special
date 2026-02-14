@@ -258,3 +258,9 @@ if (!document.getElementById("puzzle-styles")) {
   `;
   document.head.appendChild(style);
 }
+document.addEventListener("DOMContentLoaded", () => {
+  const activeScreen = document.querySelector(".screen.active");
+  if (activeScreen && activeScreen.id === "picture-reveal") {
+    window.initPuzzle();
+  }
+});
