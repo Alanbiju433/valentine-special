@@ -173,13 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (canvas) canvas.style.opacity = 1;
     }
 
-    if (id === "picture-reveal") {
-      if (!window.isPuzzleInitialized && typeof window.initPuzzle === "function") {
-        window.initPuzzle();
-        window.isPuzzleInitialized = true;
-      }
-    }
-  }
+   
 
   function animateScreen(target) {
     const frame = target.querySelector(".frame, .video-container, .puzzle-wrapper");
@@ -462,3 +456,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
