@@ -140,28 +140,44 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleScreenSpecifics(id) {
-    const video = document.getElementById("memory-video");
-    const youtubeOverlay = document.getElementById("youtube-overlay");
-    const youtubeIframe = document.getElementById("youtube-video");
-    const canvas = document.getElementById("particle-canvas");
+  const video = document.getElementById("memory-video");
+  const youtubeOverlay = document.getElementById("youtube-overlay");
+  const youtubeIframe = document.getElementById("youtube-video");
+  const canvas = document.getElementById("particle-canvas");
 
-    if (id === "video-memory") {
-      // pause bg music during video
-      if (bgMusic) bgMusic.pause();
+  if (id === "video-memory") {
+    // pause bg music during video
+    if (bgMusic) bgMusic.pause();
 
-      if (USE_YOUTUBE) {
-        if (video) video.style.display = "none";
-        if (youtubeOverlay) youtubeOverlay.style.display = "block";
-        if (youtubeIframe) youtubeIframe.src = YOUTUBE_EMBED_URL;
-      } else {
-        if (youtubeOverlay) youtubeOverlay.style.display = "none";
-        if (video) {
-          video.style.display = "block";
-          video.currentTime = 0;
-          video.play().catch(() => showToast("Video loading... ⏳"));
-          video.onended = () => showScreen("picture-reveal");
-        }
+    if (USE_YOUTUBE) {
+      if (video) video.style.display = "none";
+      if (youtubeOverlay) youtubeOverlay.style.display = "block";
+      if (youtubeIframe) youtubeIframe.src = YOUTUBE_EMBED_URL;
+    } else {
+      if (youtubeOverlay) youtubeOverlay.style.display = "none";
+      if (video) {
+        video.style.display = "block";
+        video.currentTime = 0;
+        video.play().catch(() => showToast("Video loading... ⏳"));
+        video.onended = () => showScreen("picture-reveal");
       }
+    }
+
+    if (canvas) canvas.style.opacity = 0.25;
+  } else {
+    // leaving video slide => stop playback
+    stopVideoIfAny();
+    if (bgMusic && !bgMusic.muted) bgMusic.play().catch(() => {});
+    if (canvas) canvas.style.opacity = 1;
+  }
+
+  // ✅ If you removed puzzle and now show image
+  if (id === "picture-reveal") {
+    const wrap = document.querySelector("#picture-reveal .image-wrapper");
+    if (wrap) wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 
       // fade particles a bit
       if (canvas) canvas.style.opacity = 0.25;
@@ -176,7 +192,8 @@ document.addEventListener("DOMContentLoaded", () => {
    
 
   function animateScreen(target) {
-    const frame = target.querySelector(".frame, .video-container, .puzzle-wrapper");
+    const frame = target.querySelector(".frame, .video-container, .puzzle-wrapper, .image-wrapper");
+
     if (frame && window.gsap) {
       gsap.fromTo(
         frame,
@@ -456,4 +473,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
 
