@@ -144,8 +144,8 @@ window.initPuzzle = function() {
 
         // Check if all pieces are placed
         const allPlaced = pieces.every(p => p.element.dataset.placed === 'true');
-        if (allPlaced) {
-          completeP uzzle();
+        if (allPlaced) 
+          completePuzzle();   // ✅ CORRECTcompleteP uzzle();
         }
       } else {
         draggedPiece.style.opacity = '1';
