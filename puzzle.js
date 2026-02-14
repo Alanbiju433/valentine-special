@@ -1,217 +1,150 @@
-// Puzzle initialization for the valentine special
+// Puzzle initialization (Normal layout + tray + sticky snap)
 window.initPuzzle = function () {
   const puzzleBoard = document.getElementById("puzzle-board");
   const puzzleInstruction = document.getElementById("puzzle-instruction");
   const puzzleContinueBtn = document.getElementById("puzzle-continue-btn");
 
   if (!puzzleBoard) return;
-
   puzzleBoard.innerHTML = "";
 
-  const GRID_SIZE = 4;
+  const GRID_SIZE = 4;        // change number of pieces here
   const IMAGE_URL = "fatii.png";
 
   const img = new Image();
   img.onload = function () {
+    // ✅ use parent width so it fits your page container
     const parent = puzzleBoard.parentElement || document.body;
-const parentWidth = parent.getBoundingClientRect().width;
+    const parentWidth = parent.getBoundingClientRect().width;
 
-// keep some padding so it doesn't touch edges
-const containerWidth = Math.min(600, parentWidth - 20);
-const containerHeight = containerWidth;
+    const boardSize = Math.min(560, parentWidth - 16);
+    const pieceSize = Math.floor(boardSize / GRID_SIZE);
+    const finalBoardSize = pieceSize * GRID_SIZE;
 
-    const pieceSize = containerWidth / GRID_SIZE;
+    // wrapper
+    const wrapper = document.createElement("div");
+    wrapper.className = "puzzle-wrapper";
+    Object.assign(wrapper.style, {
+      width: finalBoardSize + "px",
+      margin: "18px auto",
+      display: "flex",
+      flexDirection: "column",
+      gap: "14px",
+    });
+    puzzleBoard.appendChild(wrapper);
 
-    // Board styles
-    Object.assign(puzzleBoard.style, {
-      width: containerWidth + "px",
-      height: containerHeight + "px",
+    // board
+    const board = document.createElement("div");
+    board.id = "puzzle-grid";
+    Object.assign(board.style, {
+      width: finalBoardSize + "px",
+      height: finalBoardSize + "px",
       position: "relative",
       border: "3px solid #ff69b4",
-      borderRadius: "15px",
-      backgroundColor: "rgba(255, 255, 255, 0.05)",
-      margin: "20px auto",
-      boxShadow: "0 8px 32px rgba(255, 105, 180, 0.3)",
+      borderRadius: "16px",
+      boxShadow: "0 8px 32px rgba(255,105,180,0.30)",
       overflow: "hidden",
-      touchAction: "none", // helps mobile pointer events
+      touchAction: "none",
+      background: "rgba(255,255,255,0.05)",
     });
+    wrapper.appendChild(board);
 
-    // Containers
-    const piecesContainer = document.createElement("div");
-    piecesContainer.id = "pieces-container";
-    Object.assign(piecesContainer.style, {
+    // tray
+    const tray = document.createElement("div");
+    tray.id = "puzzle-tray";
+    Object.assign(tray.style, {
+      width: finalBoardSize + "px",
+      minHeight: Math.max(pieceSize * 1.4, 130) + "px",
+      borderRadius: "16px",
+      border: "2px dashed rgba(255,105,180,0.55)",
+      background: "rgba(255,255,255,0.04)",
+      padding: "10px",
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "10px",
+      justifyContent: "center",
+      alignItems: "center",
+      boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
+    });
+    wrapper.appendChild(tray);
+
+    // faint hint image (optional)
+    const hint = document.createElement("div");
+    Object.assign(hint.style, {
       position: "absolute",
-      width: "100%",
-      height: "100%",
-      top: "0",
-      left: "0",
-      zIndex: "2",
+      inset: "0",
+      backgroundImage: `url('${IMAGE_URL}')`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      opacity: "0.14",
+      pointerEvents: "none",
     });
-    puzzleBoard.appendChild(piecesContainer);
+    board.appendChild(hint);
 
-    const dropZone = document.createElement("div");
-    dropZone.id = "drop-zone";
-    Object.assign(dropZone.style, {
-      position: "absolute",
-      width: "100%",
-      height: "100%",
-      top: "0",
-      left: "0",
-      zIndex: "1",
-    });
-    puzzleBoard.appendChild(dropZone);
-
-    // Create pieces
+    // create pieces
     const pieces = [];
     for (let row = 0; row < GRID_SIZE; row++) {
       for (let col = 0; col < GRID_SIZE; col++) {
         const piece = document.createElement("div");
         piece.className = "puzzle-piece";
-        piece.draggable = true;
+        piece.dataset.row = String(row);
+        piece.dataset.col = String(col);
+        piece.dataset.placed = "false";
 
         const bgPosX = (col / (GRID_SIZE - 1)) * 100;
         const bgPosY = (row / (GRID_SIZE - 1)) * 100;
 
         Object.assign(piece.style, {
-          position: "absolute",
           width: pieceSize + "px",
           height: pieceSize + "px",
           backgroundImage: `url('${IMAGE_URL}')`,
           backgroundSize: `${GRID_SIZE * 100}% ${GRID_SIZE * 100}%`,
           backgroundPosition: `${bgPosX}% ${bgPosY}%`,
+          borderRadius: "12px",
+          border: "1px solid rgba(255,105,180,0.55)",
+          boxShadow: "0 10px 22px rgba(0,0,0,0.25)",
           cursor: "grab",
-          border: "1px solid rgba(255, 105, 180, 0.5)",
-          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.3)",
-          borderRadius: "8px",
-          transition: "transform 0.2s ease",
-          zIndex: "2",
+          position: "relative",
+          userSelect: "none",
+          touchAction: "none",
+          transition: "transform 0.15s ease",
         });
 
-        piece.dataset.row = String(row);
-        piece.dataset.col = String(col);
-        piece.dataset.placed = "false";
-
-        pieces.push({ element: piece, row, col });
-        piecesContainer.appendChild(piece);
+        tray.appendChild(piece);
+        pieces.push(piece);
       }
     }
 
-    // Shuffle correctly (no self-overlap bug)
-    shufflePieces(pieces, pieceSize, containerWidth, containerHeight);
+    // shuffle in tray
+    pieces.sort(() => Math.random() - 0.5).forEach((p) => tray.appendChild(p));
 
-    // ---------- Drag & Drop (Desktop) ----------
-    let draggedPiece = null;
+    // pointer drag (works on mobile + desktop)
+    let active = null;
     let offsetX = 0;
     let offsetY = 0;
 
-    piecesContainer.addEventListener("dragstart", (e) => {
-      const el = e.target;
-      if (!el.classList.contains("puzzle-piece")) return;
-      if (el.dataset.placed === "true") return; // don't drag placed ones
-
-      draggedPiece = el;
-      el.style.opacity = "0.7";
-      el.style.cursor = "grabbing";
-      offsetX = e.clientX - el.getBoundingClientRect().left;
-      offsetY = e.clientY - el.getBoundingClientRect().top;
-      e.dataTransfer.effectAllowed = "move";
-    });
-
-    dropZone.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-    });
-
-    dropZone.addEventListener("drop", (e) => {
-      e.preventDefault();
-      if (!draggedPiece) return;
-
-      placePieceAtEvent(draggedPiece, e.clientX, e.clientY);
-      draggedPiece = null;
-    });
-
-    piecesContainer.addEventListener("dragend", (e) => {
-      const el = e.target;
-      if (el.classList.contains("puzzle-piece")) {
-        el.style.opacity = "1";
-        el.style.cursor = el.dataset.placed === "true" ? "default" : "grab";
-      }
-    });
-
-    // ---------- Pointer fallback (Mobile + also works on desktop) ----------
-    let pointerPiece = null;
-
-    piecesContainer.addEventListener("pointerdown", (e) => {
-      const el = e.target;
-      if (!el.classList.contains("puzzle-piece")) return;
-      if (el.dataset.placed === "true") return;
-
-      pointerPiece = el;
-      el.setPointerCapture(e.pointerId);
-      el.style.opacity = "0.8";
-      el.style.cursor = "grabbing";
-
-      const rect = el.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-    });
-
-    piecesContainer.addEventListener("pointermove", (e) => {
-      if (!pointerPiece) return;
-      const boardRect = puzzleBoard.getBoundingClientRect();
-      const x = e.clientX - boardRect.left - offsetX;
-      const y = e.clientY - boardRect.top - offsetY;
-      pointerPiece.style.left = x + "px";
-      pointerPiece.style.top = y + "px";
-    });
-
-    piecesContainer.addEventListener("pointerup", (e) => {
-      if (!pointerPiece) return;
-      placePieceAtEvent(pointerPiece, e.clientX, e.clientY);
-      pointerPiece.style.opacity = "1";
-      pointerPiece.style.cursor = "grab";
-      pointerPiece = null;
-    });
-
-    function placePieceAtEvent(pieceEl, clientX, clientY) {
-      const rect = puzzleBoard.getBoundingClientRect();
-      const x = clientX - rect.left - offsetX;
-      const y = clientY - rect.top - offsetY;
-
-      // Use floor + clamp (better than round)
-      let row = Math.floor(y / pieceSize);
-      let col = Math.floor(x / pieceSize);
-      row = Math.max(0, Math.min(GRID_SIZE - 1, row));
-      col = Math.max(0, Math.min(GRID_SIZE - 1, col));
-
-      const targetRow = parseInt(pieceEl.dataset.row, 10);
-      const targetCol = parseInt(pieceEl.dataset.col, 10);
-
-      const tolerance = pieceSize * 0.35;
-      const expectedX = targetCol * pieceSize;
-      const expectedY = targetRow * pieceSize;
-
-      if (Math.abs(x - expectedX) < tolerance && Math.abs(y - expectedY) < tolerance) {
-        pieceEl.style.left = expectedX + "px";
-        pieceEl.style.top = expectedY + "px";
-        pieceEl.style.opacity = "1";
-        pieceEl.dataset.placed = "true";
-        pieceEl.style.cursor = "default";
-        pieceEl.style.zIndex = "10";
-        pieceEl.draggable = false;
-
-        // Prevent further touching
-        pieceEl.style.pointerEvents = "none";
-
-        const allPlaced = pieces.every((p) => p.element.dataset.placed === "true");
-        if (allPlaced) completePuzzle();
-      } else {
-        pieceEl.style.opacity = "1";
-        pieceEl.style.cursor = "grab";
-      }
+    function resetToTray(el) {
+      el.style.position = "relative";
+      el.style.left = "";
+      el.style.top = "";
+      el.style.zIndex = "";
+      tray.appendChild(el);
     }
 
-    function completePuzzle() {
+    function lockToBoard(el, row, col) {
+      el.dataset.placed = "true";
+      el.style.cursor = "default";
+      el.style.position = "absolute";
+      el.style.left = col * pieceSize + "px";
+      el.style.top = row * pieceSize + "px";
+      el.style.zIndex = "5";
+      el.style.pointerEvents = "none"; // ✅ STICK / JOIN feel
+      el.style.boxShadow = "none";
+      board.appendChild(el);
+    }
+
+    function checkComplete() {
+      if (!pieces.every((p) => p.dataset.placed === "true")) return;
+
       if (puzzleInstruction) {
         puzzleInstruction.textContent = "You did it! ❤️";
         puzzleInstruction.style.color = "#ff69b4";
@@ -220,72 +153,88 @@ const containerHeight = containerWidth;
         puzzleInstruction.style.animation = "pulse 1s infinite";
       }
 
-      const completeImage = document.createElement("div");
-      Object.assign(completeImage.style, {
-        position: "absolute",
-        width: "100%",
-        height: "100%",
-        backgroundImage: `url('${IMAGE_URL}')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        borderRadius: "15px",
-        zIndex: "4",
-        opacity: "0",
-        transition: "opacity 0.6s ease",
-        pointerEvents: "none",
-      });
-      puzzleBoard.appendChild(completeImage);
-
-      setTimeout(() => (completeImage.style.opacity = "1"), 80);
-
-      if (window.confetti) {
-        confetti({
-          particleCount: 120,
-          spread: 75,
-          origin: { y: 0.65 },
-        });
-      }
+      if (window.confetti) confetti({ particleCount: 140, spread: 80, origin: { y: 0.65 } });
 
       if (puzzleContinueBtn) {
         puzzleContinueBtn.classList.remove("hidden");
-        puzzleContinueBtn.style.position = "relative";
-        puzzleContinueBtn.style.zIndex = "20"; // ensure above image
-        if (window.gsap) {
-          gsap.fromTo(
-            puzzleContinueBtn,
-            { scale: 0 },
-            { scale: 1, duration: 0.5, ease: "back.out(2)" }
-          );
-        }
+        puzzleContinueBtn.style.zIndex = "20";
+        if (window.gsap) gsap.fromTo(puzzleContinueBtn, { scale: 0 }, { scale: 1, duration: 0.5, ease: "back.out(2)" });
       }
     }
 
-    function shufflePieces(pieces, pieceSize, containerWidth, containerHeight) {
-      const placedRects = [];
-      const maxX = containerWidth - pieceSize;
-      const maxY = containerHeight - pieceSize;
+    function trySnap(el, clientX, clientY) {
+      const boardRect = board.getBoundingClientRect();
 
-      pieces.forEach((p) => {
-        let tries = 0;
-        let x, y;
+      // dropped outside board => return to tray
+      const inside =
+        clientX >= boardRect.left &&
+        clientX <= boardRect.right &&
+        clientY >= boardRect.top &&
+        clientY <= boardRect.bottom;
 
-        do {
-          x = Math.random() * maxX;
-          y = Math.random() * maxY;
-          tries++;
-        } while (overlapsAny(x, y, pieceSize, placedRects) && tries < 50);
+      if (!inside) return resetToTray(el);
 
-        p.element.style.left = x + "px";
-        p.element.style.top = y + "px";
-        placedRects.push({ x, y });
-      });
+      const targetRow = parseInt(el.dataset.row, 10);
+      const targetCol = parseInt(el.dataset.col, 10);
+
+      const x = clientX - boardRect.left - offsetX;
+      const y = clientY - boardRect.top - offsetY;
+
+      const expectedX = targetCol * pieceSize;
+      const expectedY = targetRow * pieceSize;
+
+      const tolerance = pieceSize * 0.45; // ✅ stronger magnet
+      if (Math.abs(x - expectedX) < tolerance && Math.abs(y - expectedY) < tolerance) {
+        lockToBoard(el, targetRow, targetCol);
+        checkComplete();
+      } else {
+        resetToTray(el);
+      }
     }
 
-    function overlapsAny(x, y, size, rects) {
-      return rects.some((r) => {
-        return !(x + size < r.x || x > r.x + size || y + size < r.y || y > r.y + size);
-      });
-    }
+    wrapper.addEventListener("pointerdown", (e) => {
+      const el = e.target.closest(".puzzle-piece");
+      if (!el) return;
+      if (el.dataset.placed === "true") return;
+
+      active = el;
+      active.setPointerCapture(e.pointerId);
+
+      active.style.transform = "scale(1.05)";
+      active.style.cursor = "grabbing";
+
+      const r = active.getBoundingClientRect();
+      offsetX = e.clientX - r.left;
+      offsetY = e.clientY - r.top;
+
+      // float
+      active.style.position = "fixed";
+      active.style.left = r.left + "px";
+      active.style.top = r.top + "px";
+      active.style.zIndex = "9999";
+    });
+
+    wrapper.addEventListener("pointermove", (e) => {
+      if (!active) return;
+      active.style.left = e.clientX - offsetX + "px";
+      active.style.top = e.clientY - offsetY + "px";
+    });
+
+    wrapper.addEventListener("pointerup", (e) => {
+      if (!active) return;
+
+      active.style.transform = "scale(1)";
+      active.style.cursor = "grab";
+
+      trySnap(active, e.clientX, e.clientY);
+      active = null;
+    });
+
+    wrapper.addEventListener("pointercancel", () => {
+      if (!active) return;
+      resetToTray(active);
+      active = null;
+    });
   };
 
   img.onerror = function () {
@@ -296,17 +245,13 @@ const containerHeight = containerWidth;
   img.src = IMAGE_URL;
 };
 
-// Add puzzle styles once
+// styles once
 if (!document.getElementById("puzzle-styles")) {
   const style = document.createElement("style");
   style.id = "puzzle-styles";
   style.textContent = `
-    @keyframes pulse {
-      0%,100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
-    .puzzle-piece { user-select:none; }
-    .puzzle-piece:hover { transform: scale(1.05); }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+    .puzzle-piece:hover { filter: brightness(1.06); }
   `;
   document.head.appendChild(style);
 }
