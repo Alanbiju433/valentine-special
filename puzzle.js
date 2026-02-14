@@ -5,7 +5,13 @@ window.initPuzzle = function () {
   const puzzleContinueBtn = document.getElementById("puzzle-continue-btn");
 
   if (!puzzleBoard) return;
-  puzzleBoard.innerHTML = "";
+if (puzzleBoard.dataset.initialized === "true") return;
+puzzleBoard.dataset.initialized = "true";
+puzzleBoard.innerHTML = "";
+;
+  board.style.boxShadow = "0 0 25px rgba(255,105,180,0.6)";
+board.style.transition = "box-shadow 0.6s ease";
+
 
   const GRID_SIZE = 4;        // change number of pieces here
   const IMAGE_URL = "fatii.png";
@@ -119,18 +125,26 @@ window.initPuzzle = function () {
       el.style.zIndex = "";
       tray.appendChild(el);
     }
+function lockToBoard(el, row, col) {
+  el.dataset.placed = "true";
+  el.style.cursor = "default";
+  el.style.position = "absolute";
+  el.style.left = col * pieceSize + "px";
+  el.style.top = row * pieceSize + "px";
+  el.style.zIndex = "5";
+  el.style.pointerEvents = "none";
 
-    function lockToBoard(el, row, col) {
-      el.dataset.placed = "true";
-      el.style.cursor = "default";
-      el.style.position = "absolute";
-      el.style.left = col * pieceSize + "px";
-      el.style.top = row * pieceSize + "px";
-      el.style.zIndex = "5";
-      el.style.pointerEvents = "none"; // ✅ STICK / JOIN feel
-      el.style.boxShadow = "none";
-      board.appendChild(el);
-    }
+  // 💖 smooth snap animation
+  el.style.transition = "all 0.25s cubic-bezier(.2,.8,.2,1)";
+  el.style.transform = "scale(1)";
+
+  // remove tray styling
+  el.style.boxShadow = "none";
+  el.style.border = "1px solid rgba(255,105,180,0.3)";
+
+  board.appendChild(el);
+}
+
 
     function checkComplete() {
       if (!pieces.every((p) => p.dataset.placed === "true")) return;
@@ -173,7 +187,8 @@ window.initPuzzle = function () {
       const expectedX = targetCol * pieceSize;
       const expectedY = targetRow * pieceSize;
 
-      const tolerance = pieceSize * 0.45; // ✅ stronger magnet
+      const tolerance = pieceSize * 0.6; // stronger magnet feel
+
       if (Math.abs(x - expectedX) < tolerance && Math.abs(y - expectedY) < tolerance) {
         lockToBoard(el, targetRow, targetCol);
         checkComplete();
