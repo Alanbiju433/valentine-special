@@ -1,284 +1,307 @@
 // Puzzle initialization for the valentine special
-window.initPuzzle = function() {
-  const puzzleBoard = document.getElementById('puzzle-board');
-  const puzzleInstruction = document.getElementById('puzzle-instruction');
-  const puzzleContinueBtn = document.getElementById('puzzle-continue-btn');
+window.initPuzzle = function () {
+  const puzzleBoard = document.getElementById("puzzle-board");
+  const puzzleInstruction = document.getElementById("puzzle-instruction");
+  const puzzleContinueBtn = document.getElementById("puzzle-continue-btn");
 
   if (!puzzleBoard) return;
 
-  // Clear the board
-  puzzleBoard.innerHTML = '';
+  puzzleBoard.innerHTML = "";
 
-  // Configuration
-  const GRID_SIZE = 4; // 4x4 puzzle
-  const IMAGE_URL = 'fatii.png';
+  const GRID_SIZE = 4;
+  const IMAGE_URL = "fatii.png";
 
-  // Create and load the image
   const img = new Image();
-  img.onload = function() {
+  img.onload = function () {
     const containerWidth = Math.min(600, window.innerWidth - 40);
     const containerHeight = containerWidth;
-
-    // Set board dimensions
-    puzzleBoard.style.width = containerWidth + 'px';
-    puzzleBoard.style.height = containerHeight + 'px';
-    puzzleBoard.style.position = 'relative';
-    puzzleBoard.style.border = '3px solid #ff69b4';
-    puzzleBoard.style.borderRadius = '15px';
-    puzzleBoard.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-    puzzleBoard.style.margin = '20px auto';
-    puzzleBoard.style.boxShadow = '0 8px 32px rgba(255, 105, 180, 0.3)';
-    puzzleBoard.style.overflow = 'hidden';
-
     const pieceSize = containerWidth / GRID_SIZE;
 
-    // Create puzzle pieces
-    const pieces = [];
-    const piecesContainer = document.createElement('div');
-    piecesContainer.id = 'pieces-container';
-    piecesContainer.style.position = 'absolute';
-    piecesContainer.style.width = '100%';
-    piecesContainer.style.height = '100%';
-    piecesContainer.style.top = '0';
-    piecesContainer.style.left = '0';
+    // Board styles
+    Object.assign(puzzleBoard.style, {
+      width: containerWidth + "px",
+      height: containerHeight + "px",
+      position: "relative",
+      border: "3px solid #ff69b4",
+      borderRadius: "15px",
+      backgroundColor: "rgba(255, 255, 255, 0.05)",
+      margin: "20px auto",
+      boxShadow: "0 8px 32px rgba(255, 105, 180, 0.3)",
+      overflow: "hidden",
+      touchAction: "none", // helps mobile pointer events
+    });
+
+    // Containers
+    const piecesContainer = document.createElement("div");
+    piecesContainer.id = "pieces-container";
+    Object.assign(piecesContainer.style, {
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+      top: "0",
+      left: "0",
+      zIndex: "2",
+    });
     puzzleBoard.appendChild(piecesContainer);
 
-    // Create a drop zone
-    const dropZone = document.createElement('div');
-    dropZone.id = 'drop-zone';
-    dropZone.style.position = 'absolute';
-    dropZone.style.width = '100%';
-    dropZone.style.height = '100%';
-    dropZone.style.top = '0';
-    dropZone.style.left = '0';
-    dropZone.style.zIndex = '1';
+    const dropZone = document.createElement("div");
+    dropZone.id = "drop-zone";
+    Object.assign(dropZone.style, {
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+      top: "0",
+      left: "0",
+      zIndex: "1",
+    });
     puzzleBoard.appendChild(dropZone);
 
-    // Create pieces array
+    // Create pieces
+    const pieces = [];
     for (let row = 0; row < GRID_SIZE; row++) {
       for (let col = 0; col < GRID_SIZE; col++) {
-        const piece = document.createElement('div');
-        piece.className = 'puzzle-piece';
+        const piece = document.createElement("div");
+        piece.className = "puzzle-piece";
         piece.draggable = true;
 
-        const bgPosX = (col / GRID_SIZE) * 100;
-        const bgPosY = (row / GRID_SIZE) * 100;
+        const bgPosX = (col / (GRID_SIZE - 1)) * 100;
+        const bgPosY = (row / (GRID_SIZE - 1)) * 100;
 
-        piece.style.position = 'absolute';
-        piece.style.width = pieceSize + 'px';
-        piece.style.height = pieceSize + 'px';
-        piece.style.backgroundImage = `url('${IMAGE_URL}')`;
-        piece.style.backgroundSize = (GRID_SIZE * 100) + '% ' + (GRID_SIZE * 100) + '%';
-        piece.style.backgroundPosition = bgPosX + '% ' + bgPosY + '%';
-        piece.style.cursor = 'grab';
-        piece.style.border = '1px solid rgba(255, 105, 180, 0.5)';
-        piece.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
-        piece.style.borderRadius = '8px';
-        piece.style.transition = 'transform 0.2s ease';
-        piece.dataset.row = row;
-        piece.dataset.col = col;
-        piece.dataset.placed = 'false';
-
-        pieces.push({
-          element: piece,
-          row: row,
-          col: col,
-          placed: false
+        Object.assign(piece.style, {
+          position: "absolute",
+          width: pieceSize + "px",
+          height: pieceSize + "px",
+          backgroundImage: `url('${IMAGE_URL}')`,
+          backgroundSize: `${GRID_SIZE * 100}% ${GRID_SIZE * 100}%`,
+          backgroundPosition: `${bgPosX}% ${bgPosY}%`,
+          cursor: "grab",
+          border: "1px solid rgba(255, 105, 180, 0.5)",
+          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.3)",
+          borderRadius: "8px",
+          transition: "transform 0.2s ease",
+          zIndex: "2",
         });
 
+        piece.dataset.row = String(row);
+        piece.dataset.col = String(col);
+        piece.dataset.placed = "false";
+
+        pieces.push({ element: piece, row, col });
         piecesContainer.appendChild(piece);
       }
     }
 
-    // Shuffle pieces
-    shufflePieces(pieces, pieceSize, containerWidth, containerHeight, piecesContainer);
+    // Shuffle correctly (no self-overlap bug)
+    shufflePieces(pieces, pieceSize, containerWidth, containerHeight);
 
-    // Add drag and drop events
+    // ---------- Drag & Drop (Desktop) ----------
     let draggedPiece = null;
     let offsetX = 0;
     let offsetY = 0;
 
-    piecesContainer.addEventListener('dragstart', (e) => {
-      if (!e.target.classList.contains('puzzle-piece')) return;
-      draggedPiece = e.target;
-      e.target.style.opacity = '0.7';
-      e.target.style.cursor = 'grabbing';
-      offsetX = e.clientX - e.target.getBoundingClientRect().left;
-      offsetY = e.clientY - e.target.getBoundingClientRect().top;
-      e.dataTransfer.effectAllowed = 'move';
+    piecesContainer.addEventListener("dragstart", (e) => {
+      const el = e.target;
+      if (!el.classList.contains("puzzle-piece")) return;
+      if (el.dataset.placed === "true") return; // don't drag placed ones
+
+      draggedPiece = el;
+      el.style.opacity = "0.7";
+      el.style.cursor = "grabbing";
+      offsetX = e.clientX - el.getBoundingClientRect().left;
+      offsetY = e.clientY - el.getBoundingClientRect().top;
+      e.dataTransfer.effectAllowed = "move";
     });
 
-    dropZone.addEventListener('dragover', (e) => {
+    dropZone.addEventListener("dragover", (e) => {
       e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
+      e.dataTransfer.dropEffect = "move";
     });
 
-    dropZone.addEventListener('drop', (e) => {
+    dropZone.addEventListener("drop", (e) => {
       e.preventDefault();
       if (!draggedPiece) return;
 
+      placePieceAtEvent(draggedPiece, e.clientX, e.clientY);
+      draggedPiece = null;
+    });
+
+    piecesContainer.addEventListener("dragend", (e) => {
+      const el = e.target;
+      if (el.classList.contains("puzzle-piece")) {
+        el.style.opacity = "1";
+        el.style.cursor = el.dataset.placed === "true" ? "default" : "grab";
+      }
+    });
+
+    // ---------- Pointer fallback (Mobile + also works on desktop) ----------
+    let pointerPiece = null;
+
+    piecesContainer.addEventListener("pointerdown", (e) => {
+      const el = e.target;
+      if (!el.classList.contains("puzzle-piece")) return;
+      if (el.dataset.placed === "true") return;
+
+      pointerPiece = el;
+      el.setPointerCapture(e.pointerId);
+      el.style.opacity = "0.8";
+      el.style.cursor = "grabbing";
+
+      const rect = el.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+    });
+
+    piecesContainer.addEventListener("pointermove", (e) => {
+      if (!pointerPiece) return;
+      const boardRect = puzzleBoard.getBoundingClientRect();
+      const x = e.clientX - boardRect.left - offsetX;
+      const y = e.clientY - boardRect.top - offsetY;
+      pointerPiece.style.left = x + "px";
+      pointerPiece.style.top = y + "px";
+    });
+
+    piecesContainer.addEventListener("pointerup", (e) => {
+      if (!pointerPiece) return;
+      placePieceAtEvent(pointerPiece, e.clientX, e.clientY);
+      pointerPiece.style.opacity = "1";
+      pointerPiece.style.cursor = "grab";
+      pointerPiece = null;
+    });
+
+    function placePieceAtEvent(pieceEl, clientX, clientY) {
       const rect = puzzleBoard.getBoundingClientRect();
-      const x = e.clientX - rect.left - offsetX;
-      const y = e.clientY - rect.top - offsetY;
+      const x = clientX - rect.left - offsetX;
+      const y = clientY - rect.top - offsetY;
 
-      const row = Math.round(y / pieceSize);
-      const col = Math.round(x / pieceSize);
+      // Use floor + clamp (better than round)
+      let row = Math.floor(y / pieceSize);
+      let col = Math.floor(x / pieceSize);
+      row = Math.max(0, Math.min(GRID_SIZE - 1, row));
+      col = Math.max(0, Math.min(GRID_SIZE - 1, col));
 
-      const targetRow = parseInt(draggedPiece.dataset.row);
-      const targetCol = parseInt(draggedPiece.dataset.col);
+      const targetRow = parseInt(pieceEl.dataset.row, 10);
+      const targetCol = parseInt(pieceEl.dataset.col, 10);
 
-      // Check if piece is placed correctly (with some tolerance)
-      const tolerance = pieceSize * 0.3;
+      const tolerance = pieceSize * 0.35;
       const expectedX = targetCol * pieceSize;
       const expectedY = targetRow * pieceSize;
 
       if (Math.abs(x - expectedX) < tolerance && Math.abs(y - expectedY) < tolerance) {
-        // Piece placed correctly
-        draggedPiece.style.position = 'absolute';
-        draggedPiece.style.left = expectedX + 'px';
-        draggedPiece.style.top = expectedY + 'px';
-        draggedPiece.style.opacity = '1';
-        draggedPiece.dataset.placed = 'true';
-        draggedPiece.style.cursor = 'default';
-        draggedPiece.style.zIndex = '10';
+        pieceEl.style.left = expectedX + "px";
+        pieceEl.style.top = expectedY + "px";
+        pieceEl.style.opacity = "1";
+        pieceEl.dataset.placed = "true";
+        pieceEl.style.cursor = "default";
+        pieceEl.style.zIndex = "10";
+        pieceEl.draggable = false;
 
-        // Check if all pieces are placed
-        const allPlaced = pieces.every(p => p.element.dataset.placed === 'true');
-        if (allPlaced) {
-          completePuzzle();
-        }
+        // Prevent further touching
+        pieceEl.style.pointerEvents = "none";
+
+        const allPlaced = pieces.every((p) => p.element.dataset.placed === "true");
+        if (allPlaced) completePuzzle();
       } else {
-        draggedPiece.style.opacity = '1';
-        draggedPiece.style.cursor = 'grab';
+        pieceEl.style.opacity = "1";
+        pieceEl.style.cursor = "grab";
       }
+    }
 
-      draggedPiece = null;
-    });
-
-    piecesContainer.addEventListener('dragend', (e) => {
-      if (e.target.classList.contains('puzzle-piece')) {
-        e.target.style.opacity = '1';
-        e.target.style.cursor = 'grab';
-      }
-    });
-
-    // Complete puzzle function
     function completePuzzle() {
-      puzzleInstruction.textContent = 'You did it! ❤️';
-      puzzleInstruction.style.color = '#ff69b4';
-      puzzleInstruction.style.fontSize = '1.5em';
-      puzzleInstruction.style.fontWeight = 'bold';
-      puzzleInstruction.style.animation = 'pulse 1s infinite';
+      if (puzzleInstruction) {
+        puzzleInstruction.textContent = "You did it! ❤️";
+        puzzleInstruction.style.color = "#ff69b4";
+        puzzleInstruction.style.fontSize = "1.5em";
+        puzzleInstruction.style.fontWeight = "bold";
+        puzzleInstruction.style.animation = "pulse 1s infinite";
+      }
 
-      // Show complete image
-      const completeImage = document.createElement('div');
-      completeImage.style.position = 'absolute';
-      completeImage.style.width = '100%';
-      completeImage.style.height = '100%';
-      completeImage.style.backgroundImage = `url('${IMAGE_URL}')`;
-      completeImage.style.backgroundSize = 'cover';
-      completeImage.style.backgroundPosition = 'center';
-      completeImage.style.borderRadius = '15px';
-      completeImage.style.zIndex = '5';
-      completeImage.style.opacity = '0';
-      completeImage.style.transition = 'opacity 0.6s ease';
-      
+      const completeImage = document.createElement("div");
+      Object.assign(completeImage.style, {
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+        backgroundImage: `url('${IMAGE_URL}')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        borderRadius: "15px",
+        zIndex: "4",
+        opacity: "0",
+        transition: "opacity 0.6s ease",
+        pointerEvents: "none",
+      });
       puzzleBoard.appendChild(completeImage);
-      setTimeout(() => {
-        completeImage.style.opacity = '1';
-      }, 100);
 
-      // Trigger confetti if available
+      setTimeout(() => (completeImage.style.opacity = "1"), 80);
+
       if (window.confetti) {
         confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#ff69b4', '#ff1493', '#ffb6c1', '#ffc0cb']
+          particleCount: 120,
+          spread: 75,
+          origin: { y: 0.65 },
         });
       }
 
-      // Show continue button
       if (puzzleContinueBtn) {
-        puzzleContinueBtn.classList.remove('hidden');
+        puzzleContinueBtn.classList.remove("hidden");
+        puzzleContinueBtn.style.position = "relative";
+        puzzleContinueBtn.style.zIndex = "20"; // ensure above image
         if (window.gsap) {
-          gsap.fromTo(puzzleContinueBtn, { scale: 0 }, { scale: 1, duration: 0.5, ease: 'back.out(2)' });
+          gsap.fromTo(
+            puzzleContinueBtn,
+            { scale: 0 },
+            { scale: 1, duration: 0.5, ease: "back.out(2)" }
+          );
         }
       }
     }
+
+    function shufflePieces(pieces, pieceSize, containerWidth, containerHeight) {
+      const placedRects = [];
+      const maxX = containerWidth - pieceSize;
+      const maxY = containerHeight - pieceSize;
+
+      pieces.forEach((p) => {
+        let tries = 0;
+        let x, y;
+
+        do {
+          x = Math.random() * maxX;
+          y = Math.random() * maxY;
+          tries++;
+        } while (overlapsAny(x, y, pieceSize, placedRects) && tries < 50);
+
+        p.element.style.left = x + "px";
+        p.element.style.top = y + "px";
+        placedRects.push({ x, y });
+      });
+    }
+
+    function overlapsAny(x, y, size, rects) {
+      return rects.some((r) => {
+        return !(x + size < r.x || x > r.x + size || y + size < r.y || y > r.y + size);
+      });
+    }
   };
 
-  img.onerror = function() {
-    puzzleBoard.innerHTML = '<p style="color: #ff69b4; padding: 20px;">Unable to load puzzle image. Please ensure fatii.png exists in the root directory.</p>';
+  img.onerror = function () {
+    puzzleBoard.innerHTML =
+      "<p style='color:#ff69b4;padding:20px;'>Unable to load puzzle image. Please ensure <b>fatii.png</b> exists in the same folder.</p>";
   };
 
   img.src = IMAGE_URL;
-
-  // Shuffle pieces randomly
-  function shufflePieces(pieces, pieceSize, containerWidth, containerHeight, container) {
-    const padding = 20;
-    const maxX = containerWidth + 200;
-    const maxY = containerHeight + 200;
-
-    pieces.forEach((piece) => {
-      let randomX, randomY;
-      let attempts = 0;
-      
-      do {
-        randomX = Math.random() * maxX - 100;
-        randomY = Math.random() * maxY - 100;
-        attempts++;
-      } while (isOverlapping(randomX, randomY, pieceSize, pieces) && attempts < 10);
-
-      piece.element.style.left = randomX + 'px';
-      piece.element.style.top = randomY + 'px';
-      piece.element.style.zIndex = '2';
-    });
-  }
-
-  // Check if piece overlaps with others
-  function isOverlapping(x, y, size, pieces) {
-    return pieces.some(p => {
-      const px = parseFloat(p.element.style.left) || 0;
-      const py = parseFloat(p.element.style.top) || 0;
-      return !(x + size < px || x > px + size || y + size < py || y > py + size);
-    });
-  }
 };
 
-// CSS for animations (add to style.css if not already present)
-if (!document.getElementById('puzzle-styles')) {
-  const style = document.createElement('style');
-  style.id = 'puzzle-styles';
+// Add puzzle styles once
+if (!document.getElementById("puzzle-styles")) {
+  const style = document.createElement("style");
+  style.id = "puzzle-styles";
   style.textContent = `
     @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.05);
-      }
+      0%,100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
     }
-
-    .puzzle-piece {
-      user-select: none;
-      transition: all 0.2s ease;
-    }
-
-    .puzzle-piece:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 20px rgba(255, 105, 180, 0.5) !important;
-    }
-
-    .puzzle-piece:active {
-      cursor: grabbing !important;
-    }
-
-    #puzzle-board {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    .puzzle-piece { user-select:none; }
+    .puzzle-piece:hover { transform: scale(1.05); }
   `;
   document.head.appendChild(style);
 }
