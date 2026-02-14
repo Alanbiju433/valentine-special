@@ -9,98 +9,79 @@ window.initPuzzle = function () {
   puzzleBoard.dataset.initialized = "true";
   puzzleBoard.innerHTML = "";
 
-  const GRID_SIZE = 4;
+  const GRID_SIZE = 8; // 💖 8x8 puzzle
   const IMAGE_URL = "fatii.png";
 
   const img = new Image();
   img.onload = function () {
 
-  
-    // ✅ use parent width so it fits your page container
-    const parent = puzzleBoard.parentElement || document.body;
-    const parentWidth = parent.getBoundingClientRect().width;
-
-    const boardSize = Math.min(560, parentWidth - 16);
+    const parentWidth = puzzleBoard.parentElement.getBoundingClientRect().width;
+    const boardSize = Math.min(600, parentWidth - 20);
     const pieceSize = Math.floor(boardSize / GRID_SIZE);
-    const finalBoardSize = pieceSize * GRID_SIZE;
+    const finalSize = pieceSize * GRID_SIZE;
 
-    // wrapper
+    // ===== Wrapper =====
     const wrapper = document.createElement("div");
-    wrapper.className = "puzzle-wrapper";
-    Object.assign(wrapper.style, {
-      width: finalBoardSize + "px",
-      margin: "18px auto",
-      display: "flex",
-      flexDirection: "column",
-      gap: "14px",
-    });
+    wrapper.style.width = finalSize + "px";
+    wrapper.style.margin = "20px auto";
+    wrapper.style.display = "flex";
+    wrapper.style.flexDirection = "column";
+    wrapper.style.gap = "20px";
     puzzleBoard.appendChild(wrapper);
 
-    // board
+    // ===== Grid Board =====
     const board = document.createElement("div");
-    board.id = "puzzle-grid";
-    Object.assign(board.style, {
-      width: finalBoardSize + "px",
-      height: finalBoardSize + "px",
-      position: "relative",
-      border: "3px solid #ff69b4",
-      borderRadius: "16px",
-      boxShadow: "0 8px 32px rgba(255,105,180,0.30)",
-      overflow: "hidden",
-      touchAction: "none",
-      background: "rgba(255,255,255,0.05)",
-    });
+    board.style.width = finalSize + "px";
+    board.style.height = finalSize + "px";
+    board.style.display = "grid";
+    board.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+    board.style.gridTemplateRows = `repeat(${GRID_SIZE}, 1fr)`;
+    board.style.border = "3px solid #ff69b4";
+    board.style.borderRadius = "14px";
+    board.style.overflow = "hidden";
+    board.style.background = "rgba(255,255,255,0.05)";
     wrapper.appendChild(board);
 
-    // tray
+    // ===== Tray =====
     const tray = document.createElement("div");
-    tray.id = "puzzle-tray";
-    Object.assign(tray.style, {
-      width: finalBoardSize + "px",
-      minHeight: Math.max(pieceSize * 1.4, 130) + "px",
-      borderRadius: "16px",
-      border: "2px dashed rgba(255,105,180,0.55)",
-      background: "rgba(255,255,255,0.04)",
-      padding: "10px",
-      display: "flex",
-      flexWrap: "wrap",
-      gap: "10px",
-      justifyContent: "center",
-      alignItems: "center",
-      boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
-    });
+    tray.style.display = "flex";
+    tray.style.flexWrap = "wrap";
+    tray.style.gap = "8px";
+    tray.style.justifyContent = "center";
     wrapper.appendChild(tray);
 
-    // faint hint image (optional)
-    
-
-    // create pieces
     const pieces = [];
+
     for (let row = 0; row < GRID_SIZE; row++) {
       for (let col = 0; col < GRID_SIZE; col++) {
+
+        // create drop slot
+        const slot = document.createElement("div");
+        slot.dataset.row = row;
+        slot.dataset.col = col;
+        slot.style.width = pieceSize + "px";
+        slot.style.height = pieceSize + "px";
+        slot.style.boxSizing = "border-box";
+        board.appendChild(slot);
+
+        // create piece
         const piece = document.createElement("div");
         piece.className = "puzzle-piece";
-        piece.dataset.row = String(row);
-        piece.dataset.col = String(col);
-        piece.dataset.placed = "false";
+        piece.draggable = true;
+        piece.dataset.row = row;
+        piece.dataset.col = col;
 
-        const bgPosX = (col / (GRID_SIZE - 1)) * 100;
-        const bgPosY = (row / (GRID_SIZE - 1)) * 100;
+        const bgX = (col / (GRID_SIZE - 1)) * 100;
+        const bgY = (row / (GRID_SIZE - 1)) * 100;
 
         Object.assign(piece.style, {
           width: pieceSize + "px",
           height: pieceSize + "px",
           backgroundImage: `url('${IMAGE_URL}')`,
           backgroundSize: `${GRID_SIZE * 100}% ${GRID_SIZE * 100}%`,
-          backgroundPosition: `${bgPosX}% ${bgPosY}%`,
-          borderRadius: "12px",
-          border: "1px solid rgba(255,105,180,0.55)",
-          boxShadow: "0 10px 22px rgba(0,0,0,0.25)",
-          cursor: "grab",
-          position: "relative",
-          userSelect: "none",
-          touchAction: "none",
-          transition: "transform 0.15s ease",
+          backgroundPosition: `${bgX}% ${bgY}%`,
+          borderRadius: "8px",
+          cursor: "grab"
         });
 
         tray.appendChild(piece);
@@ -108,159 +89,63 @@ window.initPuzzle = function () {
       }
     }
 
-    // shuffle in tray
-    pieces.sort(() => Math.random() - 0.5).forEach((p) => tray.appendChild(p));
+    // shuffle
+    pieces.sort(() => Math.random() - 0.5).forEach(p => tray.appendChild(p));
 
-    // pointer drag (works on mobile + desktop)
-    let active = null;
-    let offsetX = 0;
-    let offsetY = 0;
+    let dragged = null;
 
-    function resetToTray(el) {
-      el.style.position = "relative";
-      el.style.left = "";
-      el.style.top = "";
-      el.style.zIndex = "";
-      tray.appendChild(el);
-    }
-function lockToBoard(el, row, col) {
-  el.dataset.placed = "true";
-  el.style.cursor = "default";
-  el.style.position = "absolute";
-  el.style.left = col * pieceSize + "px";
-  el.style.top = row * pieceSize + "px";
-  el.style.zIndex = "5";
-  el.style.pointerEvents = "none";
+    wrapper.addEventListener("dragstart", e => {
+      if (e.target.classList.contains("puzzle-piece")) {
+        dragged = e.target;
+      }
+    });
 
-  // 💖 smooth snap animation
-  el.style.transition = "all 0.25s cubic-bezier(.2,.8,.2,1)";
-  el.style.transform = "scale(1)";
+    wrapper.addEventListener("dragover", e => {
+      e.preventDefault();
+    });
 
-  // remove tray styling
-  el.style.boxShadow = "none";
-  el.style.border = "1px solid rgba(255,105,180,0.3)";
+    wrapper.addEventListener("drop", e => {
+      e.preventDefault();
+      if (!dragged) return;
 
-  board.appendChild(el);
-}
+      const slot = e.target;
+      if (!slot.dataset.row) return;
 
+      const correctRow = dragged.dataset.row;
+      const correctCol = dragged.dataset.col;
+
+      if (
+        slot.dataset.row === correctRow &&
+        slot.dataset.col === correctCol &&
+        !slot.hasChildNodes()
+      ) {
+        slot.appendChild(dragged);
+        dragged.draggable = false;
+        dragged.style.cursor = "default";
+        dragged.style.boxShadow = "none";
+        checkComplete();
+      }
+    });
 
     function checkComplete() {
-      if (!pieces.every((p) => p.dataset.placed === "true")) return;
+      const placed = board.querySelectorAll(".puzzle-piece").length;
+      if (placed === GRID_SIZE * GRID_SIZE) {
 
-      if (puzzleInstruction) {
-        puzzleInstruction.textContent = "You did it! ❤️";
-        puzzleInstruction.style.color = "#ff69b4";
-        puzzleInstruction.style.fontSize = "1.5em";
-        puzzleInstruction.style.fontWeight = "bold";
-        puzzleInstruction.style.animation = "pulse 1s infinite";
-      }
+        if (puzzleInstruction) {
+          puzzleInstruction.textContent = "You solved it ❤️";
+          puzzleInstruction.style.color = "#ff69b4";
+        }
 
-      if (window.confetti) confetti({ particleCount: 140, spread: 80, origin: { y: 0.65 } });
+        if (window.confetti) {
+          confetti({ particleCount: 200, spread: 90 });
+        }
 
-      if (puzzleContinueBtn) {
-        puzzleContinueBtn.classList.remove("hidden");
-        puzzleContinueBtn.style.zIndex = "20";
-        if (window.gsap) gsap.fromTo(puzzleContinueBtn, { scale: 0 }, { scale: 1, duration: 0.5, ease: "back.out(2)" });
-      }
-    }
-
-    function trySnap(el, clientX, clientY) {
-      const boardRect = board.getBoundingClientRect();
-
-      // dropped outside board => return to tray
-      const inside =
-        clientX >= boardRect.left &&
-        clientX <= boardRect.right &&
-        clientY >= boardRect.top &&
-        clientY <= boardRect.bottom;
-
-      if (!inside) return resetToTray(el);
-
-      const targetRow = parseInt(el.dataset.row, 10);
-      const targetCol = parseInt(el.dataset.col, 10);
-
-      const x = clientX - boardRect.left - offsetX;
-      const y = clientY - boardRect.top - offsetY;
-
-      const expectedX = targetCol * pieceSize;
-      const expectedY = targetRow * pieceSize;
-
-      const tolerance = pieceSize * 0.6; // stronger magnet feel
-
-      if (Math.abs(x - expectedX) < tolerance && Math.abs(y - expectedY) < tolerance) {
-        lockToBoard(el, targetRow, targetCol);
-        checkComplete();
-      } else {
-        resetToTray(el);
+        if (puzzleContinueBtn) {
+          puzzleContinueBtn.classList.remove("hidden");
+        }
       }
     }
-
-    wrapper.addEventListener("pointerdown", (e) => {
-      const el = e.target.closest(".puzzle-piece");
-      if (!el) return;
-      if (el.dataset.placed === "true") return;
-
-      active = el;
-      active.setPointerCapture(e.pointerId);
-
-      active.style.transform = "scale(1.05)";
-      active.style.cursor = "grabbing";
-
-      const r = active.getBoundingClientRect();
-      offsetX = e.clientX - r.left;
-      offsetY = e.clientY - r.top;
-
-      // float
-      active.style.position = "fixed";
-      active.style.left = r.left + "px";
-      active.style.top = r.top + "px";
-      active.style.zIndex = "9999";
-    });
-
-    wrapper.addEventListener("pointermove", (e) => {
-      if (!active) return;
-      active.style.left = e.clientX - offsetX + "px";
-      active.style.top = e.clientY - offsetY + "px";
-    });
-
-    wrapper.addEventListener("pointerup", (e) => {
-      if (!active) return;
-
-      active.style.transform = "scale(1)";
-      active.style.cursor = "grab";
-
-      trySnap(active, e.clientX, e.clientY);
-      active = null;
-    });
-
-    wrapper.addEventListener("pointercancel", () => {
-      if (!active) return;
-      resetToTray(active);
-      active = null;
-    });
-  };
-
-  img.onerror = function () {
-    puzzleBoard.innerHTML =
-      "<p style='color:#ff69b4;padding:20px;'>Unable to load puzzle image. Please ensure <b>fatii.png</b> exists in the same folder.</p>";
   };
 
   img.src = IMAGE_URL;
 };
-
-// styles once
-if (!document.getElementById("puzzle-styles")) {
-  const style = document.createElement("style");
-  style.id = "puzzle-styles";
-  style.textContent = `
-    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
-    .puzzle-piece:hover { filter: brightness(1.06); }
-  `;
-  document.head.appendChild(style);
-}
-document.addEventListener("DOMContentLoaded", () => {
-  const activeScreen = document.querySelector(".screen.active");
-  if (activeScreen && activeScreen.id === "picture-reveal") {
-    window.initPuzzle();
-  }
-});
