@@ -11,6 +11,7 @@ puzzleBoard.innerHTML = "";
 ;
   board.style.boxShadow = "0 0 25px rgba(255,105,180,0.6)";
 board.style.transition = "box-shadow 0.6s ease";
+wrapper.scrollIntoView({ behavior: "smooth", block: "start" });
 
 
   const GRID_SIZE = 4;        // change number of pieces here
